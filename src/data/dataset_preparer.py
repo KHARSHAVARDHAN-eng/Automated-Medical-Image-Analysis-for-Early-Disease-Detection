@@ -6,7 +6,7 @@ and exports the dataset.yaml configuration.
 """
 
 from pathlib import Path
-from typing import Dict, List, Tuple, Union, Optional
+from typing import Dict, List, Tuple, Union, Optional, Any
 import os
 import yaml
 import pandas as pd
@@ -175,3 +175,120 @@ def generate_dataset_yaml(
         yaml.dump(yaml_data, f, default_flow_style=False, sort_keys=False)
 
     return yaml_file
+
+
+def detect_rsna_dataset_paths(
+    search_roots: Optional[List[Union[str, Path]]] = None
+) -> Dict[str, Any]:
+    """Auto-detect RSNA dataset labels CSV and DICOM directory across Kaggle, Colab, and local environments.
+
+    Searches /kaggle/input (and local roots) dynamically without hardcoding directory structures.
+    Validates that the discovered CSV contains required patient columns and that DICOM files match.
+
+    Args:
+        search_roots: Optional list of root paths to search. Defaults to standard Kaggle/local paths.
+
+    Returns:
+        Dict[str, Any]:
+            - "is_valid": bool
+            - "labels_csv": Path or None
+            - "dicom_dir": Path or None
+            - "total_rows": int
+            - "unique_patients": int
+            - "dicom_files_found": int
+            - "error": str or None
+    """
+    if search_roots is None:
+        search_roots = [
+            Path("/kaggle/input"),
+            Path("./data"),
+            Path("../data"),
+            Path.cwd() / "data",
+            Path.cwd(),
+        ]
+
+    labels_csv: Optional[Path] = None
+    dicom_dir: Optional[Path] = None
+
+    # Step 1: Scan for labels CSV
+    for root in search_roots:
+        r_path = Path(root)
+        if not r_path.exists():
+            continue
+
+        # Look for candidate CSV files
+        for candidate in r_path.rglob("*.csv"):
+            if "train" in candidate.name.lower() or "label" in candidate.name.lower():
+                try:
+                    df_head = pd.read_csv(candidate, nrows=5)
+                    cols = set(df_head.columns)
+                    if "patientId" in cols and "Target" in cols:
+                        labels_csv = candidate.resolve()
+                        break
+                except Exception:
+                    continue
+        if labels_csv is not None:
+            break
+
+    if labels_csv is None:
+        return {
+            "is_valid": False,
+            "labels_csv": None,
+            "dicom_dir": None,
+            "error": "Could not find valid RSNA labels CSV containing 'patientId' and 'Target' columns."
+        }
+
+    # Step 2: Read candidate patient IDs for cross-referencing
+    df = pd.read_csv(labels_csv)
+    sample_pids = set(df["patientId"].dropna().head(20).astype(str))
+
+    # Step 3: Scan for directory containing matching .dcm files
+    for root in search_roots:
+        r_path = Path(root)
+        if not r_path.exists():
+            continue
+
+        # Prioritize directories named 'stage_2_train_images' or 'train_images'
+        for dir_name in ["stage_2_train_images", "train_images"]:
+            for d_cand in r_path.rglob(dir_name):
+                if d_cand.is_dir():
+                    dcm_in_dir = list(d_cand.glob("*.dcm"))
+                    if dcm_in_dir:
+                        dicom_dir = d_cand.resolve()
+                        break
+            if dicom_dir is not None:
+                break
+        if dicom_dir is not None:
+            break
+
+        # Fallback: scan any directory containing .dcm files matching candidate patient IDs
+        for dcm_file in r_path.rglob("*.dcm"):
+            parent_dir = dcm_file.parent
+            # Check if parent contains sample patients
+            if any((parent_dir / f"{pid}.dcm").exists() for pid in sample_pids):
+                dicom_dir = parent_dir.resolve()
+                break
+        if dicom_dir is not None:
+            break
+
+    if dicom_dir is None:
+        return {
+            "is_valid": False,
+            "labels_csv": labels_csv,
+            "dicom_dir": None,
+            "total_rows": len(df),
+            "unique_patients": df["patientId"].nunique(),
+            "error": "Found labels CSV but could not locate DICOM image directory containing matching patient .dcm files."
+        }
+
+    dcm_count = len(list(dicom_dir.glob("*.dcm")))
+
+    return {
+        "is_valid": True,
+        "labels_csv": labels_csv,
+        "dicom_dir": dicom_dir,
+        "total_rows": len(df),
+        "unique_patients": df["patientId"].nunique(),
+        "dicom_files_found": dcm_count,
+        "error": None
+    }
