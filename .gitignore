@@ -1,0 +1,102 @@
+# ==============================================================================
+# Byte-compiled / optimized / Python artifacts
+# ==============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ==============================================================================
+# Virtual Environments
+# ==============================================================================
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# ==============================================================================
+# Jupyter Notebooks & Checkpoints
+# ==============================================================================
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+
+# ==============================================================================
+# Datasets (RSNA Pneumonia DICOM & Processed YOLO Data)
+# Keep directory placeholders (.gitkeep) but ignore data files
+# ==============================================================================
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/samples/*
+!data/samples/.gitkeep
+
+*.dcm
+*.DCM
+*.zip
+*.tar.gz
+*.tar
+*.parquet
+
+# ==============================================================================
+# Model Weights & Training Runs
+# ==============================================================================
+models/weights/*
+!models/weights/.gitkeep
+*.pt
+*.pth
+*.onnx
+*.engine
+runs/
+wandb/
+
+# ==============================================================================
+# Credentials & Secrets
+# ==============================================================================
+kaggle.json
+*.pem
+*.key
+.env.*
+secrets.json
+
+# ==============================================================================
+# Operating System & IDE Artifacts
+# ==============================================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.idea/
+.vscode/
+.antigravity/
+*.swp
+*.swo
+
+# ==============================================================================
+# Testing & Coverage
+# ==============================================================================
+.pytest_cache/
+.coverage
+htmlcov/
