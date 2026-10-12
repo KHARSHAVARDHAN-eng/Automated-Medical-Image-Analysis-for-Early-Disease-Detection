@@ -37,7 +37,7 @@ class TestConfig(unittest.TestCase):
     def test_classes_configuration(self):
         """Verify standard class name definitions."""
         self.assertEqual(len(CLASS_NAMES), 1)
-        self.assertEqual(CLASS_NAMES[0], "Lung Opacity")
+        self.assertEqual(CLASS_NAMES[0], "pneumonia_opacity")
 
     def test_inference_device_detection(self):
         """Verify device detection returns a valid compute device."""

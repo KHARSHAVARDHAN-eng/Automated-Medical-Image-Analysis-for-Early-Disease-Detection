@@ -29,7 +29,8 @@ REPORTS_DIR = PROJECT_ROOT / "reports"
 # --- RSNA Dataset & Image Specifications ---
 DICOM_IMAGE_SIZE = (1024, 1024)  # Native resolution of RSNA Chest X-Rays
 YOLO_INPUT_SIZE = 640            # Standard input resolution for YOLO training/inference
-CLASS_NAMES: List[str] = ["Lung Opacity"]
+CLASS_NAME_PNEUMONIA = "pneumonia_opacity"
+CLASS_NAMES: List[str] = [CLASS_NAME_PNEUMONIA]
 CLASS_ID_PNEUMONIA = 0
 
 # --- Inference Defaults ---
