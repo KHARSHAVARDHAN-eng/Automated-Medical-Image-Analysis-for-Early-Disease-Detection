@@ -65,12 +65,20 @@ def download_official_samples():
                 force=False,
                 quiet=False
             )
-            # Unzip if downloaded as zip
+            # If downloaded file is a zip archive, unpack it
+            if labels_csv.exists() and zipfile.is_zipfile(labels_csv):
+                temp_zip = RAW_DATA_DIR / "temp_labels.zip"
+                labels_csv.rename(temp_zip)
+                with zipfile.ZipFile(temp_zip, "r") as z:
+                    z.extractall(RAW_DATA_DIR)
+                temp_zip.unlink()
+
             zip_target = RAW_DATA_DIR / "stage_2_train_labels.csv.zip"
             if zip_target.exists():
                 with zipfile.ZipFile(zip_target, "r") as z:
                     z.extractall(RAW_DATA_DIR)
                 zip_target.unlink()
+
             print(f"[SUCCESS] Downloaded: {labels_csv}")
         except Exception as e:
             err_str = str(e)
@@ -88,6 +96,13 @@ def download_official_samples():
                 print(f"[ERROR] Failed to download labels CSV: {e}")
                 sys.exit(1)
     else:
+        # Check if existing file is a zip that needs unpacking
+        if zipfile.is_zipfile(labels_csv):
+            temp_zip = RAW_DATA_DIR / "temp_labels.zip"
+            labels_csv.rename(temp_zip)
+            with zipfile.ZipFile(temp_zip, "r") as z:
+                z.extractall(RAW_DATA_DIR)
+            temp_zip.unlink()
         print(f"[CACHE] Using existing labels CSV: {labels_csv}")
 
     # Step 2: Parse CSV and identify 1 positive and 1 negative sample

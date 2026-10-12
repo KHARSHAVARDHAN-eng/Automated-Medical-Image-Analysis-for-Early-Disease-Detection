@@ -10,6 +10,9 @@ from src.config import (
     MODELS_DIR,
     WEIGHTS_DIR,
     NOTEBOOKS_DIR,
+    OUTPUTS_DIR,
+    PREVIEWS_DIR,
+    REPORTS_DIR,
     get_inference_device,
     CLASS_NAMES,
 )
@@ -27,6 +30,9 @@ class TestConfig(unittest.TestCase):
         self.assertTrue(MODELS_DIR.exists(), "MODELS_DIR must exist.")
         self.assertTrue(WEIGHTS_DIR.exists(), "WEIGHTS_DIR must exist.")
         self.assertTrue(NOTEBOOKS_DIR.exists(), "NOTEBOOKS_DIR must exist.")
+        self.assertTrue(OUTPUTS_DIR.exists(), "OUTPUTS_DIR must exist.")
+        self.assertTrue(PREVIEWS_DIR.exists(), "PREVIEWS_DIR must exist.")
+        self.assertTrue(REPORTS_DIR.exists(), "REPORTS_DIR must exist.")
 
     def test_classes_configuration(self):
         """Verify standard class name definitions."""

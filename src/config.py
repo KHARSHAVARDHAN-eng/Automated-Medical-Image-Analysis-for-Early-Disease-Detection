@@ -22,6 +22,9 @@ FALLBACK_PRETRAINED_MODEL = "yolov8s.pt"
 
 NOTEBOOKS_DIR = PROJECT_ROOT / "notebooks"
 TESTS_DIR = PROJECT_ROOT / "tests"
+OUTPUTS_DIR = PROJECT_ROOT / "outputs"
+PREVIEWS_DIR = OUTPUTS_DIR / "ground_truth_previews"
+REPORTS_DIR = PROJECT_ROOT / "reports"
 
 # --- RSNA Dataset & Image Specifications ---
 DICOM_IMAGE_SIZE = (1024, 1024)  # Native resolution of RSNA Chest X-Rays
