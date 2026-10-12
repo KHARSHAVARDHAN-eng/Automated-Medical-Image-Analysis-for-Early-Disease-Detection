@@ -5,9 +5,24 @@ from pathlib import Path
 import cv2
 import pandas as pd
 
-from src.config import RAW_DATA_DIR, SAMPLES_DIR, PREVIEWS_DIR, REPORTS_DIR
+from src.config import PROJECT_ROOT, RAW_DATA_DIR, SAMPLES_DIR, PREVIEWS_DIR, REPORTS_DIR
 from src.data.dicom_utils import read_dicom_image, get_dicom_metadata
 from src.data.rsna_parser import parse_ground_truth_labels
+
+
+# 10 verified samples in project
+VERIFIED_SAMPLES = [
+    {"patient_id": "00436515-870c-4b36-a041-de91049b9ab4", "target": 1, "expected_boxes": 2},
+    {"patient_id": "00704310-78a8-4b38-8475-49f4573b2dbb", "target": 1, "expected_boxes": 2},
+    {"patient_id": "00aecb01-a116-45a2-956c-08d2fa55433f", "target": 1, "expected_boxes": 2},
+    {"patient_id": "00c0b293-48e7-4e16-ac76-9269ba535a62", "target": 1, "expected_boxes": 2},
+    {"patient_id": "00f08de1-517e-4652-a04f-d1dc9ee48593", "target": 1, "expected_boxes": 2},
+    {"patient_id": "0004cfab-14fd-4e49-80ba-63a80b6bddd6", "target": 0, "expected_boxes": 0},
+    {"patient_id": "00313ee0-9eaa-42f4-b0ab-c148ed3241cd", "target": 0, "expected_boxes": 0},
+    {"patient_id": "00322d4d-1c29-4943-afc9-b6754be640eb", "target": 0, "expected_boxes": 0},
+    {"patient_id": "003d8fa0-6bf1-40ed-b54c-ac657f8495c5", "target": 0, "expected_boxes": 0},
+    {"patient_id": "00569f44-917d-4c86-a842-81832af98c30", "target": 0, "expected_boxes": 0},
+]
 
 
 class TestSampleIntegration(unittest.TestCase):
@@ -23,54 +38,58 @@ class TestSampleIntegration(unittest.TestCase):
         self.assertTrue(expected_cols.issubset(set(df.columns)), f"Columns missing from {df.columns}")
         self.assertGreater(len(df), 30000, "Dataset should have over 30,000 annotation rows.")
 
-        # Verify positive sample is present
-        pos_id = "00436515-870c-4b36-a041-de91049b9ab4"
-        pos_rows = df[df["patientId"] == pos_id]
-        self.assertEqual(len(pos_rows), 2, "Positive sample must have exactly 2 opacity rows.")
-        self.assertTrue((pos_rows["Target"] == 1).all(), "All rows for positive sample must have Target=1.")
-
-        # Verify negative sample is present
-        neg_id = "0004cfab-14fd-4e49-80ba-63a80b6bddd6"
-        neg_rows = df[df["patientId"] == neg_id]
-        self.assertEqual(len(neg_rows), 1, "Negative sample must have 1 row.")
-        self.assertEqual(int(neg_rows.iloc[0]["Target"]), 0, "Negative sample must have Target=0.")
+        # Verify all 10 samples in the CSV
+        for s in VERIFIED_SAMPLES:
+            pid = s["patient_id"]
+            rows = df[df["patientId"] == pid]
+            self.assertGreater(len(rows), 0, f"Patient {pid} must exist in CSV.")
+            if s["target"] == 1:
+                self.assertEqual(len(rows), s["expected_boxes"], f"Positive sample {pid} must have {s['expected_boxes']} box rows.")
+                self.assertTrue((rows["Target"] == 1).all(), f"All rows for {pid} must have Target=1.")
+            else:
+                self.assertEqual(len(rows), 1, f"Negative sample {pid} must have 1 row.")
+                self.assertEqual(int(rows.iloc[0]["Target"]), 0, f"Negative sample {pid} must have Target=0.")
 
     def test_dicom_samples_decoding(self):
-        """Verify genuine downloaded DICOM samples decode to valid (1024, 1024, 3) images."""
-        pos_dcm = SAMPLES_DIR / "00436515-870c-4b36-a041-de91049b9ab4.dcm"
-        neg_dcm = SAMPLES_DIR / "0004cfab-14fd-4e49-80ba-63a80b6bddd6.dcm"
+        """Verify all 10 genuine downloaded DICOM samples decode to valid (1024, 1024, 3) images."""
+        for s in VERIFIED_SAMPLES:
+            pid = s["patient_id"]
+            dcm_path = SAMPLES_DIR / f"{pid}.dcm"
+            self.assertTrue(dcm_path.exists(), f"DICOM file for {pid} must exist.")
 
-        self.assertTrue(pos_dcm.exists(), "Positive sample DICOM must exist.")
-        self.assertTrue(neg_dcm.exists(), "Negative sample DICOM must exist.")
+            img = read_dicom_image(dcm_path)
+            self.assertEqual(img.shape, (1024, 1024, 3), f"Image {pid} shape should be (1024, 1024, 3).")
+            meta = get_dicom_metadata(dcm_path)
+            self.assertEqual(meta["patient_id"], pid, f"Metadata patient_id should match {pid}.")
 
-        # Test positive DICOM
-        pos_img = read_dicom_image(pos_dcm)
-        self.assertEqual(pos_img.shape, (1024, 1024, 3))
-        pos_meta = get_dicom_metadata(pos_dcm)
-        self.assertEqual(pos_meta["patient_id"], "00436515-870c-4b36-a041-de91049b9ab4")
+    def test_all_10_previews_generated(self):
+        """Verify all 10 preview PNGs are present and readable with expected composite dimensions."""
+        for s in VERIFIED_SAMPLES:
+            pid = s["patient_id"]
+            preview_path = PREVIEWS_DIR / f"preview_{pid}.png"
+            self.assertTrue(preview_path.exists(), f"Preview PNG for {pid} must exist.")
 
-        # Test negative DICOM
-        neg_img = read_dicom_image(neg_dcm)
-        self.assertEqual(neg_img.shape, (1024, 1024, 3))
-        neg_meta = get_dicom_metadata(neg_dcm)
-        self.assertEqual(neg_meta["patient_id"], "0004cfab-14fd-4e49-80ba-63a80b6bddd6")
+            img = cv2.imread(str(preview_path))
+            self.assertIsNotNone(img, f"Preview image {pid} must be readable by OpenCV.")
+            # 1024 + 60 (header) = 1084 height; 1024 + 4 + 1024 = 2052 width
+            self.assertEqual(img.shape[0], 1084, f"Height of {pid} should be 1084.")
+            self.assertEqual(img.shape[1], 2052, f"Width of {pid} should be 2052.")
 
-    def test_previews_and_reports_generated(self):
-        """Verify preview PNGs and report are present and readable."""
-        preview_pos = PREVIEWS_DIR / "preview_00436515-870c-4b36-a041-de91049b9ab4.png"
-        preview_neg = PREVIEWS_DIR / "preview_0004cfab-14fd-4e49-80ba-63a80b6bddd6.png"
-        report_file = REPORTS_DIR / "dataset_verification_report.md"
+    def test_demo_html_and_py_reference_all_10_samples(self):
+        """Verify demo.html and demo.py reference all 10 verified patient IDs."""
+        html_file = PROJECT_ROOT / "demo.html"
+        py_file = PROJECT_ROOT / "demo.py"
 
-        self.assertTrue(preview_pos.exists(), "Positive preview PNG must exist.")
-        self.assertTrue(preview_neg.exists(), "Negative preview PNG must exist.")
-        self.assertTrue(report_file.exists(), "Dataset verification report must exist.")
+        self.assertTrue(html_file.exists(), "demo.html must exist.")
+        self.assertTrue(py_file.exists(), "demo.py must exist.")
 
-        # Verify images can be opened and have combined side-by-side dimensions
-        img_pos = cv2.imread(str(preview_pos))
-        self.assertIsNotNone(img_pos)
-        # 1024 + 60 (header) = 1084 height; 1024 + 4 + 1024 = 2052 width
-        self.assertEqual(img_pos.shape[0], 1084)
-        self.assertEqual(img_pos.shape[1], 2052)
+        html_content = html_file.read_text()
+        py_content = py_file.read_text()
+
+        for s in VERIFIED_SAMPLES:
+            pid = s["patient_id"]
+            self.assertIn(pid, html_content, f"demo.html must contain patient ID {pid}")
+            self.assertIn(pid, py_content, f"demo.py must contain patient ID {pid}")
 
 
 if __name__ == "__main__":

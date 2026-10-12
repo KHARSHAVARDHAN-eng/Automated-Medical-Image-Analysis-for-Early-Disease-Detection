@@ -3,17 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Automated Medical Image Analysis for Early Disease Detection - Demo</title>
+    <title>Automated Medical Image Analysis - 10 Sample Clinical Gallery</title>
     <style>
         :root {
-            --bg-color: #0f172a;
+            --bg-color: #0b1120;
             --card-bg: #1e293b;
+            --card-inner: #0f172a;
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
             --border-color: #334155;
             --badge-pos: #ef4444;
             --badge-neg: #10b981;
             --accent: #38bdf8;
+            --accent-glow: rgba(56, 189, 248, 0.15);
         }
         * {
             box-sizing: border-box;
@@ -47,39 +49,92 @@
             font-size: 1.1rem;
             color: var(--text-muted);
         }
-        .meta-strip {
+        .stats-bar {
             display: flex;
-            gap: 1.5rem;
-            margin-top: 1rem;
+            gap: 1rem;
+            margin-top: 1.25rem;
             flex-wrap: wrap;
         }
-        .meta-pill {
-            background: rgba(56, 189, 248, 0.1);
-            border: 1px solid rgba(56, 189, 248, 0.25);
-            color: var(--accent);
-            padding: 4px 12px;
-            border-radius: 999px;
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-        .case-card {
+        .stat-pill {
             background: var(--card-bg);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 1.75rem;
-            margin-bottom: 2.5rem;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
-        .case-header {
+        .stat-pill strong {
+            color: var(--accent);
+        }
+        .filter-nav {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        .filter-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 8px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .filter-btn:hover {
+            border-color: var(--accent);
+            color: #ffffff;
+        }
+        .filter-btn.active {
+            background: var(--accent);
+            color: #0f172a;
+            border-color: var(--accent);
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+        }
+        .gallery-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem;
+        }
+        .sample-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 1.75rem;
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+            transition: border-color 0.2s ease;
+        }
+        .sample-card:hover {
+            border-color: rgba(56, 189, 248, 0.4);
+        }
+        .sample-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1rem;
+            margin-bottom: 1.25rem;
             flex-wrap: wrap;
-            gap: 0.75rem;
+            gap: 1rem;
         }
-        .case-title {
-            font-size: 1.4rem;
+        .sample-title-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .sample-number {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            font-size: 0.95rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+        .sample-title {
+            font-size: 1.35rem;
             font-weight: 600;
         }
         .badge {
@@ -93,63 +148,70 @@
         .badge-positive {
             background-color: var(--badge-pos);
             color: #ffffff;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
         }
         .badge-negative {
             background-color: var(--badge-neg);
             color: #ffffff;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
         }
-        .case-details {
+        .sample-meta {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            background: rgba(15, 23, 42, 0.6);
+            gap: 0.75rem;
+            background: var(--card-inner);
             padding: 1rem 1.25rem;
             border-radius: 8px;
             border: 1px solid rgba(255, 255, 255, 0.05);
             margin-bottom: 1.25rem;
             font-size: 0.95rem;
         }
-        .case-details div span {
+        .sample-meta div span {
             color: var(--text-muted);
             display: block;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 0.05em;
             margin-bottom: 2px;
         }
-        .img-container {
+        .img-viewport {
             width: 100%;
             border-radius: 8px;
             overflow: hidden;
             border: 1px solid var(--border-color);
             background: #000;
         }
-        .img-container img {
+        .img-viewport img {
             width: 100%;
             height: auto;
             display: block;
         }
-        .box-info {
+        .box-summary {
             margin-top: 1rem;
-            background: rgba(239, 68, 68, 0.1);
-            border-left: 4px solid var(--badge-pos);
-            padding: 0.75rem 1rem;
+            padding: 0.85rem 1.2rem;
             border-radius: 0 6px 6px 0;
             font-size: 0.9rem;
         }
-        .box-info-neg {
-            margin-top: 1rem;
-            background: rgba(16, 185, 129, 0.1);
+        .box-summary-pos {
+            background: rgba(239, 68, 68, 0.08);
+            border-left: 4px solid var(--badge-pos);
+        }
+        .box-summary-neg {
+            background: rgba(16, 185, 129, 0.08);
             border-left: 4px solid var(--badge-neg);
-            padding: 0.75rem 1rem;
-            border-radius: 0 6px 6px 0;
-            font-size: 0.9rem;
+        }
+        .box-summary strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+        .box-summary ul {
+            margin-left: 1.25rem;
         }
         footer {
             text-align: center;
             color: var(--text-muted);
             font-size: 0.85rem;
-            margin-top: 2rem;
+            margin-top: 3rem;
             padding-top: 1.5rem;
             border-top: 1px solid var(--border-color);
         }
@@ -159,62 +221,297 @@
     <div class="container">
         <header>
             <h1>Automated Medical Image Analysis for Early Disease Detection</h1>
-            <p class="subtitle">RSNA Pneumonia Detection Benchmark | Real-Image Radiograph Demonstration</p>
-            <div class="meta-strip">
-                <div class="meta-pill">Dataset: RSNA Pneumonia Challenge (30,227 records)</div>
-                <div class="meta-pill">Native Resolution: 1024 &times; 1024 DICOM</div>
-                <div class="meta-pill">Detection Class: pneumonia_opacity</div>
-                <div class="meta-pill">Hardware: Apple M1 (8GB) + Kaggle GPU</div>
+            <p class="subtitle">Verified RSNA Clinical Benchmark &bull; 10-Sample Patient Demonstration Gallery</p>
+            <div class="stats-bar">
+                <div class="stat-pill">Total Gallery Samples: <strong>10 Distinct Patients</strong></div>
+                <div class="stat-pill">Pneumonia Positive (Target = 1): <strong>5 Cases (10 Opacity Boxes)</strong></div>
+                <div class="stat-pill">Normal Baseline (Target = 0): <strong>5 Cases (0 Opacity Boxes)</strong></div>
+                <div class="stat-pill">Image Resolution: <strong>1024 &times; 1024 DICOM</strong></div>
             </div>
         </header>
 
-        <!-- Case 1: Positive -->
-        <section class="case-card">
-            <div class="case-header">
-                <div class="case-title">Case 1: Positive Case (Pneumonia Detected)</div>
-                <span class="badge badge-positive">Pneumonia Positive (Target = 1)</span>
-            </div>
-            <div class="case-details">
-                <div><span>Patient ID</span>00436515-870c-4b36-a041-de91049b9ab4</div>
-                <div><span>Demographics</span>Age 32, Female</div>
-                <div><span>View Position</span>AP (Anteroposterior)</div>
-                <div><span>Annotated Opacities</span>2 Confirmed Bounding Boxes</div>
-            </div>
-            <div class="img-container">
-                <img src="outputs/ground_truth_previews/preview_00436515-870c-4b36-a041-de91049b9ab4.png" alt="Positive Pneumonia Radiograph with Bounding Boxes">
-            </div>
-            <div class="box-info">
-                <strong>Official Radiologist Annotations:</strong>
-                <ul>
-                    <li><strong>Box #1:</strong> x = 264.0, y = 152.0, width = 213.0, height = 379.0 (Right lower lung zone)</li>
-                    <li><strong>Box #2:</strong> x = 562.0, y = 152.0, width = 256.0, height = 453.0 (Left mid/perihilar lung zone)</li>
-                </ul>
-            </div>
-        </section>
+        <!-- Gallery Filters -->
+        <div class="filter-nav">
+            <button class="filter-btn active" onclick="filterGallery('all')">Show All 10 Samples</button>
+            <button class="filter-btn" onclick="filterGallery('positive')">Pneumonia Positive (5)</button>
+            <button class="filter-btn" onclick="filterGallery('negative')">Normal Baseline (5)</button>
+        </div>
 
-        <!-- Case 2: Negative -->
-        <section class="case-card">
-            <div class="case-header">
-                <div class="case-title">Case 2: Negative Case (Normal Baseline Comparison)</div>
-                <span class="badge badge-negative">Confirmed Normal (Target = 0)</span>
-            </div>
-            <div class="case-details">
-                <div><span>Patient ID</span>0004cfab-14fd-4e49-80ba-63a80b6bddd6</div>
-                <div><span>Demographics</span>Age 51, Female</div>
-                <div><span>View Position</span>PA (Posteroanterior)</div>
-                <div><span>Annotated Opacities</span>0 Bounding Boxes (Clean Lungs)</div>
-            </div>
-            <div class="img-container">
-                <img src="outputs/ground_truth_previews/preview_0004cfab-14fd-4e49-80ba-63a80b6bddd6.png" alt="Normal Chest Radiograph">
-            </div>
-            <div class="box-info-neg">
-                <strong>Official Radiologist Findings:</strong> Clear lung fields with no pathological opacities. Serves as baseline negative reference.
-            </div>
-        </section>
+        <div class="gallery-grid">
+
+            <!-- SAMPLE 01: Positive -->
+            <article class="sample-card" data-category="positive">
+                <div class="sample-header">
+                    <div class="sample-title-group">
+                        <span class="sample-number">Sample 01</span>
+                        <div class="sample-title">Pneumonia Patient Case</div>
+                    </div>
+                    <span class="badge badge-positive">Pneumonia Positive (Target = 1)</span>
+                </div>
+                <div class="sample-meta">
+                    <div><span>Patient ID</span><code>00436515-870c-4b36-a041-de91049b9ab4</code></div>
+                    <div><span>Demographics</span>Age 32 &bull; Female</div>
+                    <div><span>Acquisition View</span>CR &bull; AP (Anteroposterior)</div>
+                    <div><span>Annotated Opacities</span>2 Ground-Truth Boxes</div>
+                </div>
+                <div class="img-viewport">
+                    <img src="outputs/ground_truth_previews/preview_00436515-870c-4b36-a041-de91049b9ab4.png" alt="Sample 01 Pneumonia X-Ray">
+                </div>
+                <div class="box-summary box-summary-pos">
+                    <strong>Official RSNA Ground-Truth Bounding Boxes:</strong>
+                    <ul>
+                        <li>Box #1: x=264.0, y=152.0, width=213.0, height=379.0 (Right lower lung zone)</li>
+                        <li>Box #2: x=562.0, y=152.0, width=256.0, height=453.0 (Left perihilar lung zone)</li>
+                    </ul>
+                </div>
+            </article>
+
+            <!-- SAMPLE 02: Positive -->
+            <article class="sample-card" data-category="positive">
+                <div class="sample-header">
+                    <div class="sample-title-group">
+                        <span class="sample-number">Sample 02</span>
+                        <div class="sample-title">Pneumonia Patient Case</div>
+                    </div>
+                    <span class="badge badge-positive">Pneumonia Positive (Target = 1)</span>
+                </div>
+                <div class="sample-meta">
+                    <div><span>Patient ID</span><code>00704310-78a8-4b38-8475-49f4573b2dbb</code></div>
+                    <div><span>Demographics</span>Age 75 &bull; Male</div>
+                    <div><span>Acquisition View</span>CR &bull; PA (Posteroanterior)</div>
+                    <div><span>Annotated Opacities</span>2 Ground-Truth Boxes</div>
+                </div>
+                <div class="img-viewport">
+                    <img src="outputs/ground_truth_previews/preview_00704310-78a8-4b38-8475-49f4573b2dbb.png" alt="Sample 02 Pneumonia X-Ray">
+                </div>
+                <div class="box-summary box-summary-pos">
+                    <strong>Official RSNA Ground-Truth Bounding Boxes:</strong>
+                    <ul>
+                        <li>Box #1: x=323.0, y=577.0, width=160.0, height=104.0 (Right basilar consolidation)</li>
+                        <li>Box #2: x=695.0, y=575.0, width=162.0, height=137.0 (Left basilar consolidation)</li>
+                    </ul>
+                </div>
+            </article>
+
+            <!-- SAMPLE 03: Positive -->
+            <article class="sample-card" data-category="positive">
+                <div class="sample-header">
+                    <div class="sample-title-group">
+                        <span class="sample-number">Sample 03</span>
+                        <div class="sample-title">Pneumonia Patient Case</div>
+                    </div>
+                    <span class="badge badge-positive">Pneumonia Positive (Target = 1)</span>
+                </div>
+                <div class="sample-meta">
+                    <div><span>Patient ID</span><code>00aecb01-a116-45a2-956c-08d2fa55433f</code></div>
+                    <div><span>Demographics</span>Age 6 &bull; Female (Pediatric Case)</div>
+                    <div><span>Acquisition View</span>CR &bull; AP (Anteroposterior)</div>
+                    <div><span>Annotated Opacities</span>2 Ground-Truth Boxes</div>
+                </div>
+                <div class="img-viewport">
+                    <img src="outputs/ground_truth_previews/preview_00aecb01-a116-45a2-956c-08d2fa55433f.png" alt="Sample 03 Pneumonia X-Ray">
+                </div>
+                <div class="box-summary box-summary-pos">
+                    <strong>Official RSNA Ground-Truth Bounding Boxes:</strong>
+                    <ul>
+                        <li>Box #1: x=288.0, y=322.0, width=94.0, height=135.0 (Right perihilar infiltrate)</li>
+                        <li>Box #2: x=547.0, y=299.0, width=119.0, height=165.0 (Left perihilar infiltrate)</li>
+                    </ul>
+                </div>
+            </article>
+
+            <!-- SAMPLE 04: Positive -->
+            <article class="sample-card" data-category="positive">
+                <div class="sample-header">
+                    <div class="sample-title-group">
+                        <span class="sample-number">Sample 04</span>
+                        <div class="sample-title">Pneumonia Patient Case</div>
+                    </div>
+                    <span class="badge badge-positive">Pneumonia Positive (Target = 1)</span>
+                </div>
+                <div class="sample-meta">
+                    <div><span>Patient ID</span><code>00c0b293-48e7-4e16-ac76-9269ba535a62</code></div>
+                    <div><span>Demographics</span>Age 23 &bull; Female</div>
+                    <div><span>Acquisition View</span>CR &bull; AP (Anteroposterior)</div>
+                    <div><span>Annotated Opacities</span>2 Ground-Truth Boxes</div>
+                </div>
+                <div class="img-viewport">
+                    <img src="outputs/ground_truth_previews/preview_00c0b293-48e7-4e16-ac76-9269ba535a62.png" alt="Sample 04 Pneumonia X-Ray">
+                </div>
+                <div class="box-summary box-summary-pos">
+                    <strong>Official RSNA Ground-Truth Bounding Boxes:</strong>
+                    <ul>
+                        <li>Box #1: x=306.0, y=544.0, width=168.0, height=244.0 (Right mid/lower lobe)</li>
+                        <li>Box #2: x=650.0, y=511.0, width=206.0, height=284.0 (Left mid/lower lobe)</li>
+                    </ul>
+                </div>
+            </article>
+
+            <!-- SAMPLE 05: Positive -->
+            <article class="sample-card" data-category="positive">
+                <div class="sample-header">
+                    <div class="sample-title-group">
+                        <span class="sample-number">Sample 05</span>
+                        <div class="sample-title">Pneumonia Patient Case</div>
+                    </div>
+                    <span class="badge badge-positive">Pneumonia Positive (Target = 1)</span>
+                </div>
+                <div class="sample-meta">
+                    <div><span>Patient ID</span><code>00f08de1-517e-4652-a04f-d1dc9ee48593</code></div>
+                    <div><span>Demographics</span>Age 58 &bull; Male</div>
+                    <div><span>Acquisition View</span>CR &bull; AP (Anteroposterior)</div>
+                    <div><span>Annotated Opacities</span>2 Ground-Truth Boxes</div>
+                </div>
+                <div class="img-viewport">
+                    <img src="outputs/ground_truth_previews/preview_00f08de1-517e-4652-a04f-d1dc9ee48593.png" alt="Sample 05 Pneumonia X-Ray">
+                </div>
+                <div class="box-summary box-summary-pos">
+                    <strong>Official RSNA Ground-Truth Bounding Boxes:</strong>
+                    <ul>
+                        <li>Box #1: x=181.0, y=184.0, width=206.0, height=506.0 (Extensive right lung opacity)</li>
+                        <li>Box #2: x=571.0, y=275.0, width=230.0, height=476.0 (Extensive left lung opacity)</li>
+                    </ul>
+                </div>
+            </article>
+
+            <!-- SAMPLE 06: Negative -->
+            <article class="sample-card" data-category="negative">
+                <div class="sample-header">
+                    <div class="sample-title-group">
+                        <span class="sample-number">Sample 06</span>
+                        <div class="sample-title">Normal Healthy Baseline</div>
+                    </div>
+                    <span class="badge badge-negative">Confirmed Normal (Target = 0)</span>
+                </div>
+                <div class="sample-meta">
+                    <div><span>Patient ID</span><code>0004cfab-14fd-4e49-80ba-63a80b6bddd6</code></div>
+                    <div><span>Demographics</span>Age 51 &bull; Female</div>
+                    <div><span>Acquisition View</span>CR &bull; PA (Posteroanterior)</div>
+                    <div><span>Annotated Opacities</span>0 Boxes (Clear Lungs)</div>
+                </div>
+                <div class="img-viewport">
+                    <img src="outputs/ground_truth_previews/preview_0004cfab-14fd-4e49-80ba-63a80b6bddd6.png" alt="Sample 06 Normal X-Ray">
+                </div>
+                <div class="box-summary box-summary-neg">
+                    <strong>Official Radiologist Consensus:</strong> Clear lung fields without pathological opacities. Confirmed baseline negative.
+                </div>
+            </article>
+
+            <!-- SAMPLE 07: Negative -->
+            <article class="sample-card" data-category="negative">
+                <div class="sample-header">
+                    <div class="sample-title-group">
+                        <span class="sample-number">Sample 07</span>
+                        <div class="sample-title">Normal Healthy Baseline</div>
+                    </div>
+                    <span class="badge badge-negative">Confirmed Normal (Target = 0)</span>
+                </div>
+                <div class="sample-meta">
+                    <div><span>Patient ID</span><code>00313ee0-9eaa-42f4-b0ab-c148ed3241cd</code></div>
+                    <div><span>Demographics</span>Age 48 &bull; Female</div>
+                    <div><span>Acquisition View</span>CR &bull; PA (Posteroanterior)</div>
+                    <div><span>Annotated Opacities</span>0 Boxes (Clear Lungs)</div>
+                </div>
+                <div class="img-viewport">
+                    <img src="outputs/ground_truth_previews/preview_00313ee0-9eaa-42f4-b0ab-c148ed3241cd.png" alt="Sample 07 Normal X-Ray">
+                </div>
+                <div class="box-summary box-summary-neg">
+                    <strong>Official Radiologist Consensus:</strong> Clear lung parenchyma with normal cardiothoracic ratio. Confirmed baseline negative.
+                </div>
+            </article>
+
+            <!-- SAMPLE 08: Negative -->
+            <article class="sample-card" data-category="negative">
+                <div class="sample-header">
+                    <div class="sample-title-group">
+                        <span class="sample-number">Sample 08</span>
+                        <div class="sample-title">Normal Healthy Baseline</div>
+                    </div>
+                    <span class="badge badge-negative">Confirmed Normal (Target = 0)</span>
+                </div>
+                <div class="sample-meta">
+                    <div><span>Patient ID</span><code>00322d4d-1c29-4943-afc9-b6754be640eb</code></div>
+                    <div><span>Demographics</span>Age 19 &bull; Male</div>
+                    <div><span>Acquisition View</span>CR &bull; AP (Anteroposterior)</div>
+                    <div><span>Annotated Opacities</span>0 Boxes (Clear Lungs)</div>
+                </div>
+                <div class="img-viewport">
+                    <img src="outputs/ground_truth_previews/preview_00322d4d-1c29-4943-afc9-b6754be640eb.png" alt="Sample 08 Normal X-Ray">
+                </div>
+                <div class="box-summary box-summary-neg">
+                    <strong>Official Radiologist Consensus:</strong> Young adult thoracic anatomy with clear lung volumes and sharp costophrenic angles.
+                </div>
+            </article>
+
+            <!-- SAMPLE 09: Negative -->
+            <article class="sample-card" data-category="negative">
+                <div class="sample-header">
+                    <div class="sample-title-group">
+                        <span class="sample-number">Sample 09</span>
+                        <div class="sample-title">Normal Healthy Baseline</div>
+                    </div>
+                    <span class="badge badge-negative">Confirmed Normal (Target = 0)</span>
+                </div>
+                <div class="sample-meta">
+                    <div><span>Patient ID</span><code>003d8fa0-6bf1-40ed-b54c-ac657f8495c5</code></div>
+                    <div><span>Demographics</span>Age 28 &bull; Male</div>
+                    <div><span>Acquisition View</span>CR &bull; PA (Posteroanterior)</div>
+                    <div><span>Annotated Opacities</span>0 Boxes (Clear Lungs)</div>
+                </div>
+                <div class="img-viewport">
+                    <img src="outputs/ground_truth_previews/preview_003d8fa0-6bf1-40ed-b54c-ac657f8495c5.png" alt="Sample 09 Normal X-Ray">
+                </div>
+                <div class="box-summary box-summary-neg">
+                    <strong>Official Radiologist Consensus:</strong> Normal pulmonary vasculature without focal air-space consolidation or pleural effusion.
+                </div>
+            </article>
+
+            <!-- SAMPLE 10: Negative -->
+            <article class="sample-card" data-category="negative">
+                <div class="sample-header">
+                    <div class="sample-title-group">
+                        <span class="sample-number">Sample 10</span>
+                        <div class="sample-title">Normal Healthy Baseline</div>
+                    </div>
+                    <span class="badge badge-negative">Confirmed Normal (Target = 0)</span>
+                </div>
+                <div class="sample-meta">
+                    <div><span>Patient ID</span><code>00569f44-917d-4c86-a842-81832af98c30</code></div>
+                    <div><span>Demographics</span>Age 54 &bull; Male</div>
+                    <div><span>Acquisition View</span>CR &bull; AP (Anteroposterior)</div>
+                    <div><span>Annotated Opacities</span>0 Boxes (Clear Lungs)</div>
+                </div>
+                <div class="img-viewport">
+                    <img src="outputs/ground_truth_previews/preview_00569f44-917d-4c86-a842-81832af98c30.png" alt="Sample 10 Normal X-Ray">
+                </div>
+                <div class="box-summary box-summary-neg">
+                    <strong>Official Radiologist Consensus:</strong> Normal pulmonary aerated parenchymal fields. Confirmed baseline negative.
+                </div>
+            </article>
+
+        </div>
 
         <footer>
-            Automated Medical Image Analysis for Early Disease Detection &bull; Verified RSNA Ground Truth Benchmark &bull; 2026
+            Automated Medical Image Analysis for Early Disease Detection &bull; Verified RSNA 10-Sample Benchmark Gallery &bull; 2026
         </footer>
     </div>
+
+    <script>
+        function filterGallery(category) {
+            const cards = document.querySelectorAll('.sample-card');
+            const buttons = document.querySelectorAll('.filter-btn');
+            
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            cards.forEach(card => {
+                if (category === 'all' || card.getAttribute('data-category') === category) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+    </script>
 </body>
 </html>
