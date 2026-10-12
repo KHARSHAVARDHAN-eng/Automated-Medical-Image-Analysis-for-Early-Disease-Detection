@@ -93,3 +93,69 @@ def create_side_by_side_comparison(
     divider[:] = (80, 80, 80)  # Neutral gray separator
 
     return np.hstack([original_img, divider, annotated_img])
+
+
+def overlay_ground_truth(
+    image: np.ndarray,
+    boxes: List[Tuple[float, float, float, float]],
+    label: str = "Ground Truth: Lung Opacity",
+    box_color: Tuple[int, int, int] = (50, 205, 50),  # Emerald green (clinical ground-truth standard)
+    text_color: Tuple[int, int, int] = (255, 255, 255),
+    thickness: int = 3,
+) -> np.ndarray:
+    """Draw genuine RSNA ground-truth bounding boxes onto a copy of the image.
+
+    Explicitly differentiates dataset ground-truth annotations from model predictions.
+
+    Args:
+        image: Original radiograph image (H, W, 3) in RGB.
+        boxes: List of bounding box tuples (x, y, width, height) in pixel coordinates.
+        label: Text displayed on the ground-truth badge.
+        box_color: RGB tuple for the box border (default: vibrant emerald green).
+        text_color: RGB tuple for text font.
+        thickness: Pixel thickness of bounding box borders.
+
+    Returns:
+        np.ndarray: Annotated RGB image copy.
+    """
+    annotated = image.copy()
+
+    for idx, (x, y, w, h) in enumerate(boxes, start=1):
+        x1, y1 = int(round(x)), int(round(y))
+        x2, y2 = int(round(x + w)), int(round(y + h))
+
+        # Clamp to image bounds
+        x1, y1 = max(0, x1), max(0, y1)
+        x2, y2 = min(annotated.shape[1], x2), min(annotated.shape[0], y2)
+
+        # Draw ground-truth bounding box
+        cv2.rectangle(annotated, (x1, y1), (x2, y2), box_color, thickness)
+
+        # Ground truth badge text
+        caption = f"{label} #{idx}" if len(boxes) > 1 else label
+
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = 0.55
+        font_thickness = 1
+        (tw, th), baseline = cv2.getTextSize(caption, font, font_scale, font_thickness)
+
+        # Draw filled badge
+        badge_y1 = max(0, y1 - th - baseline - 6)
+        badge_y2 = y1
+        badge_x2 = min(annotated.shape[1], x1 + tw + 8)
+        cv2.rectangle(annotated, (x1, badge_y1), (badge_x2, badge_y2), box_color, -1)
+
+        # Draw text inside badge
+        text_origin = (x1 + 4, y1 - baseline - 3)
+        cv2.putText(
+            annotated,
+            caption,
+            text_origin,
+            font,
+            font_scale,
+            text_color,
+            font_thickness,
+            lineType=cv2.LINE_AA,
+        )
+
+    return annotated

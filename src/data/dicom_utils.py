@@ -25,7 +25,10 @@ def read_dicom_image(
         np.ndarray: uint8 image array formatted for display or model input.
     """
     import pydicom
-    from pydicom.pixel_data_handlers.util import apply_voi_lut
+    try:
+        from pydicom.pixels import apply_voi_lut
+    except ImportError:
+        from pydicom.pixel_data_handlers.util import apply_voi_lut
     import cv2
 
     dcm = pydicom.dcmread(str(dcm_path))
