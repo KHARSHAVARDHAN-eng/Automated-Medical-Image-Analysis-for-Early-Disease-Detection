@@ -74,6 +74,8 @@ wandb/
 # ==============================================================================
 outputs/ground_truth_previews/*
 !outputs/ground_truth_previews/.gitkeep
+!outputs/ground_truth_previews/*.csv
+
 
 # ==============================================================================
 # Credentials & Secrets
